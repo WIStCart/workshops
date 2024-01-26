@@ -3,7 +3,6 @@ layout: default
 title: Creative Workflows Using QGIS and SQL
 nav_order: 2
 description: "Use QGIS and SQL to build your own witness tree map using data from the original land survey of Wisconsin."
-permalink: /creative-workflows-using-qgis-and-sql
 has_children: true
 ---
 
@@ -17,13 +16,13 @@ The Wisconsin General Land Office Survey Records (WIGLOSR) database contains dig
 
 In exercise one you will manually create your tree map in QGIS using a plethora of tools.
 
-[Begin Exercise 1](./exercise-1){: .btn}
+[Begin Exercise 1](./exercise-1/){: .btn}
 
 ## Exercise 2
 
 In exercise two you will use SQL and PostGIS to quickly and easily create a tree map.
 
-[Begin Exercise 2](./exercise-2){: .btn}
+[Begin Exercise 2](./exercise-2/){: .btn}
 
 ## Final Remarks
 

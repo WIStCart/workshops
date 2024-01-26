@@ -19,7 +19,7 @@ Whether you’ve been meaning to check out QGIS or SQL or you already have exper
 <!------ Links ------>
 
 <!-- Creative Workflows Using QGIS and SQL -->
-[Creative Workflows Using QGIS and SQL]: creative-workflows-using-qgis-and-sql/
+[Creative Workflows Using QGIS and SQL]: creative-workflows-using-qgis-and-sql
 [witness tree map]: https://www.sco.wisc.edu/wp-content/uploads/2021/11/Pine_Lake_PLS_Tree_Map_v4.pdf
 [filtered datasets]: https://docs.qgis.org/latest/en/docs/user_manual/working_with_vector/vector_properties.html#query-builder
 [virtual layers]: https://docs.qgis.org/latest/en/docs/user_manual/managing_data_source/create_layers.html#creating-virtual-layers
