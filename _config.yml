@@ -2,8 +2,8 @@ title: SCO Workshops
 description: Workshops developed by the Wisconsin State Cartographer's Office.
 theme: just-the-docs
 
-url: https://wistcart.github.io/workshops
-permalink: pretty
+url: https://wistcart.github.io/workshops/
+permalink: /:path/:title/
 
 # logo: "https://www.sco.wisc.edu/wp-content/uploads/2023/06/scologo.png"
 
