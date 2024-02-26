@@ -10,11 +10,15 @@ parent: Creative Workflows Using QGIS and SQL
 
 ## Download Data
 
-Start out by downloading the [WIGLOSR database](https://uwmadison.box.com/shared/static/3iy9yt003vr99dshvkq1hqy79puz2amg.zip){: target="_blank"}. Unzip it and you will find a FileGDB, a geopackage, and the database documentation. For this walk through I will use the geopackage and QGIS version 3.2.1, but you can just as easily use a FileGDB and ArcPro.
+Start out by downloading the [WIGLOSR database](https://uwmadison.box.com/shared/static/3iy9yt003vr99dshvkq1hqy79puz2amg.zip){: target="_blank"}. Unzip it and you will find a geopackage and the database documentation. For this walk through I will use QGIS version 3.28.15, but you can just as easily use ArcPro.
 
 ## Add Data
 
-Let's start out by adding data from our geopackage (gpkg) to our map. We'll add the *townships*, *corner_obs*, and *witness_trees* datasets.
+Let's start out by opening QGIS and adding data from our geopackage (gpkg) to our map. 
+
+In the *Browser* pane, right click *GeoPackage* and select *New Connection*. Select the geopackage you downloaded and click *Open*.
+
+We'll add the *townships*, *corner_obs*, and *witness_trees* datasets. 
 
 ![image](../images/add-data-browser.png) ![image](../images/add-data-layers.png){: .ml-8 .v-align-top}
 {: style="width:fit-content" class="d-block mx-auto"}
@@ -50,7 +54,7 @@ Click *Add* then *Close*.
 
 Open up the toolbox by selecting *Processing* in the top menu then *Toolbox*. In the *Processing Toolbox* search *Extract by location* and select the tool.
 
-We will extract features from *witness_trees*, where the features *intersect*, by comparing to features from *42308_100m_buffer*. Keep the *Extracted (location)* blank. Click *Run in Background* then *Close*.
+We will extract features from *witness_trees*, where the features *intersect*, by comparing to features from *42308_100m_buffer*. Keep the *Extracted (location)* blank. Click *Run* then *Close*.
 
 ![](../images/extract-by-location.png){: .d-block .mx-auto}
 
@@ -68,24 +72,23 @@ First let's join the *observations* table on *dtrsco*, adding only the *ptype* f
 ### Add Fields
 Second, we'll add some additional fields that we'll use later as variables in the symbology. 
 
-Select *Source Fields* from the left menu and click *Field Calculator* button at the top that looks like an abacus.
+Select *Fields* from the left menu and click *Field Calculator* button at the top that looks like an abacus.
 
 #### sp_class
 1. Check the *Create virtual field* box
 2. Use the following inputs:
     <dl>
       <dt>Output field name</dt><dd><i>sp_class</i></dd>
-      <dt>Output field type</dt><dd>Text</dd>
-      <dt>Output field length</dt><dd>20</dd>
+      <dt>Output field type</dt><dd>Text (string)</dd>
     </dl>
 3. *Expression*:
   ```sql
-  CASE 
-    WHEN sp IN ('OA','LO','RO','WO','BO','SO') THEN 'Oak'
-    WHEN sp IN ('PI','RP','HP','WP','JP') THEN 'Pine'
-    WHEN sp IN ('FI','SP','HE','WC','CE','TA') THEN 'Other Coniferous'
-    WHEN sp IN ('BA','RE','SU','WB','BI','LI','WA','MA','AS','EL','BU','IR','AH','YB','AL','WM','HA','HI','BB') THEN 'Hardwood'
-  END
+CASE 
+  WHEN sp IN ('OA','LO','RO','WO','BO','SO') THEN 'Oak'
+  WHEN sp IN ('PI','RP','HP','WP','JP') THEN 'Pine'
+  WHEN sp IN ('FI','SP','HE','WC','CE','TA') THEN 'Other Coniferous'
+  WHEN sp IN ('BA','RE','SU','WB','BI','LI','WA','MA','AS','EL','BU','IR','AH','YB','AL','WM','HA','HI','BB') THEN 'Hardwood'
+END
   ```
 4. Click *OK*
 
@@ -98,18 +101,17 @@ Use the field calculator to add a couple of more fields in a similar fashion:
 2. Use the following inputs:
     <dl>
       <dt>Output field name</dt><dd><i>diam_class</i></dd>
-      <dt>Output field type</dt><dd>Decimal number</dd>
-      <dt>Precision</dt><dd>1</dd>
+      <dt>Output field type</dt><dd>Decimal (double)</dd>
     </dl>
 3. *Expression*:
   ```sql
-  CASE 
-    WHEN diam<=5              THEN 4.0
-    WHEN diam> 5 AND diam<=10 THEN 7.5
-    WHEN diam>10 AND diam<=15 THEN 11.0
-    WHEN diam>15 AND diam<=20 THEN 14.5
-    WHEN diam>20              THEN 18.0
-  END
+CASE 
+  WHEN diam<=5              THEN 4.0
+  WHEN diam> 5 AND diam<=10 THEN 7.5
+  WHEN diam>10 AND diam<=15 THEN 11.0
+  WHEN diam>15 AND diam<=20 THEN 14.5
+  WHEN diam>20              THEN 18.0
+END
   ```
 4. Click *OK*
 
@@ -120,48 +122,48 @@ Use the field calculator to add a couple of more fields in a similar fashion:
 2. Use the following inputs:
     <dl>
       <dt>Output field name</dt><dd><i>display_az</i></dd>
-      <dt>Output field type</dt><dd>Whole number (integer)</dd>
+      <dt>Output field type</dt><dd>Integer (32 bit)</dd>
       <dt>Output field length</dt><dd>10</dd>
     </dl>
 3. *Expression*:
   ```sql
-  CASE
-    WHEN az IS NULL THEN 45
-    WHEN length(az)=1 THEN
-      CASE
-        WHEN az='N' THEN 45
-        WHEN az='E' THEN 135
-        WHEN az='S' THEN 225
-        WHEN az='W' THEN 315
-      END
-    WHEN length(az)=2 THEN
-      CASE
-        WHEN az='NE' THEN 45
-        WHEN az='SE' THEN 135
-        WHEN az='SW' THEN 225
-        WHEN az='NW' THEN 315
-      END
-    ELSE
-      CASE
-        WHEN substr(az, 1, 1)='N' THEN
-          CASE
-            WHEN substr(az, -1, 1)='W' THEN 315
-            WHEN substr(az, -1, 1)='E' THEN 45
-          END
-        WHEN substr(az, 1, 1)='S' THEN
-          CASE
-            WHEN substr(az, -1, 1)='W' THEN 225
-            WHEN substr(az, -1, 1)='E' THEN 135
-          END
-      END
-  END
+CASE
+  WHEN az IS NULL THEN 45
+  WHEN length(az)=1 THEN
+    CASE
+      WHEN az='N' THEN 45
+      WHEN az='E' THEN 135
+      WHEN az='S' THEN 225
+      WHEN az='W' THEN 315
+    END
+  WHEN length(az)=2 THEN
+    CASE
+      WHEN az='NE' THEN 45
+      WHEN az='SE' THEN 135
+      WHEN az='SW' THEN 225
+      WHEN az='NW' THEN 315
+    END
+  ELSE
+    CASE
+      WHEN substr(az, 1, 1)='N' THEN
+        CASE
+          WHEN substr(az, -1, 1)='W' THEN 315
+          WHEN substr(az, -1, 1)='E' THEN 45
+        END
+      WHEN substr(az, 1, 1)='S' THEN
+        CASE
+          WHEN substr(az, -1, 1)='W' THEN 225
+          WHEN substr(az, -1, 1)='E' THEN 135
+        END
+    END
+END
   ```
 4. Click *OK*
 
 ![](../images/witness-trees-field-calculator-az.png){: .d-block .mx-auto}
 
 #### dtrsc
-1. Check the *Create virtual field* box
+1. This time, do **not** check the *Create virtual field* box
 2. Use the following inputs:
     <dl>
       <dt>Output field name</dt><dd><i>dtrsc</i></dd>
@@ -178,6 +180,8 @@ Use the field calculator to add a couple of more fields in a similar fashion:
 4. Click *OK*
 
 ![](../images/witness-trees-field-calculator-dtrsc.png){: .d-block .mx-auto}
+
+Click *OK* to close the properties.
 
 ### Join Fields
 Now that we have the needed fields, we'll actually join *witness_trees_42308* to *corner_obs*.
@@ -196,24 +200,28 @@ Open the *Processing Toolbox* and search for and open *Join attributes by field 
 
 ![](../images/witness-trees-join-attributes-by-field-value.png){: .d-block .mx-auto}
 
-Rename the newly created layer to something like *witness_trees_42308_cartographic*. Then add a filter by right-clicking on the layer and selecting *Filter*. For the *filter expression* use `"ptype" = 'P'`.
+Rename the newly created layer to something like *witness_trees_42308_cartographic*. Then add a filter by right-clicking on the layer and selecting *Filter*. For the *filter expression* use `"observations_ptype" = 'P'`.
+
+![](../images/witness-trees-filter.png){: .d-block .mx-auto}
 
 ### Symbology
 Next open the *Properties* for *witness_trees_42308_cartographic* and go to the *Symbology* tab:  
 1. At the top change *Single Symbol* to *Categorized.*
-2. For *Column* select *sp_class*.
-3. Edit the *Symbol* by clicking *Change*.
-  - Select *Simple marker* in the top left box, then
+2. For *Value* select *sp_class*.
+3. Edit the *Symbol* by clicking on it.
+  - Select *Simple marker* in the top box, then
   - under *Symbol layer type* select *Geometry generator*. 
-  - With *Polygon* selected enter the following in the box.
+  - With *Polygon* selected as the *Geometry type*, enter the following in the box.
     ```bash
     buffer(project($geometry, diam_class*sqrt(2)*10, radians(display_az)), diam_class*10)
     ```
   - Click *OK* to close.
-4. Click *Classify* and five categories should appear, uncheck the null one. 
+  ![](../images/symbology-geometry-generator.png){: .d-block .mx-auto}
+4. Click *Classify* and five categories should appear.
+  - Select the null category and click the minus button to remove it. 
   - Right-click on the *Hardwood* record and select *Change Color*, then enter *#bebada* under *HTML notation*. 
   - Change the colors for *Oak*, *Other Coniferous*, and *Pine* to *#ffffb3*, *#8dd3c7*, and *#fb8072* respectively. Click *Apply* to save progress.
-
+  ![](../images/symbology-classes.png){: .d-block .mx-auto}
 
 ### Labels
 To add labels, go to the *Labels* tab in the left menu. Change *No labels* to *Rule-based labeling*. Use the plus button at the bottom to add the following rules:
@@ -241,8 +249,6 @@ To add labels, go to the *Labels* tab in the left menu. Change *No labels* to *R
     ```
   - Click *OK* to close *Expression String Builder*
 4. Click *OK* to close *Edit Rule*
-
-![](../images/witness-trees-edit-rule.png){: .d-block .mx-auto}
 
 #### NW
 1. Use the following inputs:
@@ -316,6 +322,8 @@ To add labels, go to the *Labels* tab in the left menu. Change *No labels* to *R
   - Click *OK* to close *Expression String Builder*
 4. Click *OK* to close *Edit Rule*
 
+![](../images/witness-trees-edit-rule.png){: .d-block .mx-auto}
+
 Click *Apply* and then *OK* to close out of properties.
 
 ## Final Styling
@@ -343,14 +351,14 @@ messy, but should look better when we add the map to a print layout.
 1. In the main menu click *Project* > *New Print Layout*. Click *OK*.
 2. Right-click on page and select *Page Properties*. In the bottom right of
 the window under *Item Properties*:
-  - Change *Size* to *ANSI B*
+  - Change *Size* to *Letter*
   - Change Orientation* to *Portrait*
 3. Use the *Add new map* button on the left to add your map. 
   - Drag the edges of your map to meet the edges of the page on the left, right, and
 bottom. 
   - Leave room on the top making your map box square.
 4. With your map selected, go to *Item Properties* and change the *Scale*
-to *42000*.
+to *55000*.
 5. From there you can add a legend, title, scalebar etc. Adding a legend
 depicting diameter size classes will have to be done manually. I usually
 do it in Adobe Illustrator but there are many other options including
