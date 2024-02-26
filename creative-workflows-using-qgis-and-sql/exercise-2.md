@@ -8,42 +8,22 @@ parent: Creative Workflows Using QGIS and SQL
 
 # Exercise 2: Create Tree Map Using SQL and PostGIS
 
-Did I just have you go through all of exercise one when the smae thing can be done way easier if you just ditch the geopackage/geodatabase and instead use a PostGIS database? Yes, oops.
+Did I just have you go through all of exercise one when the same thing can be done way easier if you just utilize the database functionality of the geopackage? Yes, oops.
 
 {: .note}
-For this section I used QGIS 3.2.1, but things should be similar in other versions.
+For this section I used QGIS 3.28.15, but things should be similar in other versions.
 
-Let's add a new database connection, create a new layer using a single
-query, then apply some saved styles.
+Under the hood, geopackages are really just SQLite databases. SQLite databases can have the [SpatiLite](https://www.gaia-gis.it/fossil/libspatialite/index) spatial extension which is uses the same syntax as a Postgres database with the [PostGIS](https://postgis.net/docs/reference.html) spatial extension.
 
-## Add New Database Connection
-1. In the top menu go to *Layer* > *Data Source Manager*
-2. Under *Connection* click *New*
-	- Use the following inputs:
-		<dl>
-			<dt>Name</dt><dd>WIGLOSR</dd>
-			<dt>Host</dt><dd>rds-ue2-d-glo.cdrcfbhucsdp.us-east-2.rds.amazonaws.com</dd>
-			<dt>Database</dt><dd>glo</dd>
-		</dl>
-	- Under *Authentication* click the *Basic* tab and use the following:
-		<dl>
-			<dt>User name</dt><dd>publicreadonly</dd>
-			<dt>Password</dt><dd>publicreadonly</dd>
-		</dl>
-	- Select *Store* for both the username and password. 
-	- Click *OK* to finish and add the connection
-	- Click *OK* if it warns you about saving passwords
-3. Click *Close* to exit the Data Source Manager window
+Using the geopackage, let's create a new layer using a single query, then apply some saved styles.
 
-You can now find your newly added database connection in the *Browser* pane under *PostGIS*.
-
-![](../images/create-new-postgis-connection.png){: .d-block .mx-auto}
+Open a new map document.
 
 ## Add Townships
 
 Starting out with something simple and familiar:
 
-1. Drag and drop the townships layer from the PostGIS connection
+1. Drag and drop the townships layer from the geopackage.
 2. Right-click on the *townships* layer and select *Filter*.
 	- For the expression enter `"dtr"=42308`
 	- Click *OK*
@@ -55,69 +35,65 @@ Now for something new. You can add layers from the database by dragging and drop
 look at adding based on a query. 
 
 1. In the top menu go to *Database* > *DB Manager*. 
-2. Expand *PostGIS*, then expand your database. 
+2. Expand *GeoPackage*, then expand your the WIGLOSR geopackage. 
 3. With your database selected, you can now click on the *SQL Window* button that looks like a page with a wrench on it (or go to *Database* > *SQL Window*). In the query section add the following:
 	```sql
-	WITH variables (scale) AS (
-		values(10)
-	),
-	aoi AS (
-		SELECT 0 AS id, ST_Union(geom) AS aoigeom
-		FROM sections
-		WHERE dir=4 AND twp=23 AND rng=8
-	), trees AS (
-		SELECT wt.*,o.ptype,lc.geog AS corner_geog,
-			CASE
-				WHEN wt.sp IN ('LO','RO','WO','BO') THEN 'Oak'
-				WHEN wt.sp IN ('PI','RP','HP','WP','JP') THEN 'Pine'
-				WHEN wt.sp IN ('FI','SP','HE','WC','CE','TA') THEN 'Other Coniferous'
-				WHEN wt.sp IN ('BA','RE','SU','WB','BI','LI','WA','MA','AS','EL','BU','IR','AH','YB') THEN 'Hardwood'
-			END AS sp_class,
-			CASE
-				WHEN wt.diam<=5                 THEN  4.0
-				WHEN wt.diam> 5 AND wt.diam<=10 THEN  7.5
-				WHEN wt.diam>10 AND wt.diam<=15 THEN 11.0
-				WHEN wt.diam>15 AND wt.diam<=20 THEN 14.5
-				WHEN wt.diam>20                 THEN 18.0
-			END AS diam_class,
-			CASE
-				WHEN az IS NULL THEN 45
-				WHEN length(az)=1 THEN
-					CASE
-						WHEN az='N' THEN  45
-						WHEN az='E' THEN 135
-						WHEN az='S' THEN 225
-						WHEN az='W' THEN 315
-					END
-				WHEN length(az)=2 THEN
-					CASE
-						WHEN az='NE' THEN  45
-						WHEN az='SE' THEN 135
-						WHEN az='SW' THEN 225
-						WHEN az='NW' THEN 315
-					END
-				ELSE 
-					CASE
-						WHEN left(az, 1)='N' THEN
-							CASE
-								WHEN right(az, 1)='W' THEN 315
-								WHEN right(az, 1)='E' THEN  45
-							END
-						WHEN left(az, 1)='S' THEN
-							CASE
-								WHEN right(az, 1)='W' THEN 225
-								WHEN right(az, 1)='E' THEN 135
-							END
-					END
-			END AS display_az
-		FROM witness_trees AS wt
-		JOIN aoi ON ST_Within(wt.geom,aoi.aoigeom)
-		LEFT JOIN observations AS o ON o.dtrsco=wt.dtrsco
-		LEFT JOIN landnet_corners AS lc ON wt.dtrsco/100=lc.dtrsc
-		WHERE o.ptype='P'
-	)
-	SELECT *, ST_Buffer(ST_Project(corner_geog, diam_class*sqrt(2)*scale, radians(display_az)),diam_class*scale) AS display_geog
-	FROM trees, variables
+SELECT fid, sp_class, diam_class, display_az, ST_Buffer(ST_Transform(ST_Project(corner_geom, diam_class*sqrt(2)*10, radians(display_az)), 3070),diam_class*10) AS display_geom
+FROM (
+    SELECT wt.fid, ST_Transform(co.geom, 4326) AS corner_geom,
+        CASE
+            WHEN wt.sp IN ('LO','RO','WO','BO') THEN 'Oak'
+            WHEN wt.sp IN ('PI','RP','HP','WP','JP') THEN 'Pine'
+            WHEN wt.sp IN ('FI','SP','HE','WC','CE','TA') THEN 'Other Coniferous'
+            WHEN wt.sp IN ('BA','RE','SU','WB','BI','LI','WA','MA','AS','EL','BU','IR','AH','YB') THEN 'Hardwood'
+        END AS sp_class,
+        CASE
+            WHEN wt.diam<=5                 THEN  4.0
+            WHEN wt.diam> 5 AND wt.diam<=10 THEN  7.5
+            WHEN wt.diam>10 AND wt.diam<=15 THEN 11.0
+            WHEN wt.diam>15 AND wt.diam<=20 THEN 14.5
+            WHEN wt.diam>20                 THEN 18.0
+        END AS diam_class,
+        CASE
+            WHEN az IS NULL THEN 45
+            WHEN length(az)=1 THEN
+                CASE
+                    WHEN az='N' THEN  45
+                    WHEN az='E' THEN 135
+                    WHEN az='S' THEN 225
+                    WHEN az='W' THEN 315
+                END
+            WHEN length(az)=2 THEN
+                CASE
+                    WHEN az='NE' THEN  45
+                    WHEN az='SE' THEN 135
+                    WHEN az='SW' THEN 225
+                    WHEN az='NW' THEN 315
+                END
+            ELSE 
+                CASE
+                    WHEN substr(az, 1, 1)='N' THEN
+                        CASE
+                            WHEN substr(az, -1)='W' THEN 315
+                            WHEN substr(az, -1)='E' THEN  45
+                        END
+                    WHEN substr(az, 1, 1)='S' THEN
+                        CASE
+                            WHEN substr(az, -1)='W' THEN 225
+                            WHEN substr(az, -1)='E' THEN 135
+                        END
+                END
+        END AS display_az
+    FROM witness_trees AS wt
+    JOIN (
+        SELECT 0 AS id, ST_Union(geom) AS aoigeom
+        FROM sections
+        WHERE dir=4 AND twp=23 AND rng=8
+    ) AS aoi ON ST_Within(wt.geom,aoi.aoigeom)
+    LEFT JOIN observations AS o ON o.dtrsco=wt.dtrsco
+    LEFT JOIN corner_obs AS co ON wt.dtrsco/100=co.dtrsc
+    WHERE o.ptype='P' AND wt.geom IS NOT NULL
+)
 	```
 
 	{: .note-title}
@@ -131,8 +107,8 @@ look at adding based on a query.
 below after it completes.
 5. Check *Load as new layer*
 6. Check *Column(s) with unique values*
-7. Select both *dtrsco* and *tree_id*
-8. For *Geometry column* select *display_geog*. 
+7. Select *dtrsco*
+8. For *Geometry column* select *display_geom*. 
 9. For *Layer name* enter something like *witness_trees_42308*
 10. Click *Load* and once it completes you can close out of the DB Manager window.
 
