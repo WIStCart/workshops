@@ -359,10 +359,7 @@ bottom.
   - Leave room on the top making your map box square.
 4. With your map selected, go to *Item Properties* and change the *Scale*
 to *55000*.
-5. From there you can add a legend, title, scalebar etc. Adding a legend
-depicting diameter size classes will have to be done manually. I usually
-do it in Adobe Illustrator but there are many other options including
-free software such as [inkscape](https://inkscape.org/){: target="_blank"} .
+5. From there you can add a legend, title, scalebar etc. Adding a legend depicting diameter size classes will have to be done manually. I usually do it in Adobe Illustrator but there are many other options including free software such as [inkscape](https://inkscape.org/){: target="_blank"}. You can download [this legend template](https://uwmadison.box.com/s/sbevzznbde60fzdkme0j2j90kuoqlpr7) to give you a head start.
 
 Check out [this complete tree map](https://www.sco.wisc.edu/wp-content/uploads/2021/11/Pine_Lake_PLS_Tree_Map_v4.pdf){: target="_blank"} for an example of a finished product.
 
