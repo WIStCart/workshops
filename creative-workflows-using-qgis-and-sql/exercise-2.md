@@ -11,13 +11,13 @@ parent: Creative Workflows Using QGIS and SQL
 Did I just have you go through all of exercise one when the smae thing can be done way easier if you just ditch the geopackage/geodatabase and instead use a PostGIS database? Yes, oops.
 
 {: .note}
-For this section I used QGIS 3.2.1, but things should be similar in other versions.
+For this section I used QGIS 3.28.15, but things should be similar in other versions.
 
 Let's add a new database connection, create a new layer using a single
 query, then apply some saved styles.
 
 ## Add New Database Connection
-1. In the top menu go to *Layer* > *Data Source Manager*
+1. In the top menu go to *Layer* > *Data Source Manager* > *PostgreSQL*
 2. Under *Connection* click *New*
 	- Use the following inputs:
 		<dl>
